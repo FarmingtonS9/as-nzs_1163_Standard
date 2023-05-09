@@ -7,12 +7,17 @@ fn main() {
     let reference_shs = SHS::new(100.).length(8000.).gauge(5.).build();
 }
 
+//Add struct for reference SHS, similar to SHS struct
+//Easier for end user to build an explicitly separate SHS product
+//Future idea: Add reference SHS to SHS product struct so it can be internally accessed (if None, warn user)
+
 #[derive(Debug)]
 struct SHS {
     width: f32,
     height: f32,
     gauge: f32,
     length: f32,
+    //shs_reference: SHSRef
 }
 
 impl SHS {
@@ -102,7 +107,7 @@ impl SHS {
         }
     }
 
-    fn check_thickness(&self, reference_gauge: f32) -> bool {
+    fn check_thickness(&self, reference_gauge: &f32) -> bool {
         let allowed_tolerance_gauge = 0.01 * reference_gauge;
         let gauge_difference = self.gauge - reference_gauge;
 
@@ -118,6 +123,56 @@ impl SHS {
         } else {
             println!("Required tolerance: Failed");
             false
+        }
+    }
+
+    //Future implementation
+    //Combine check_concavity() and check_convexity() functions together since they are reciprocals of each other
+    //I.e negative concavity is just positive convexity
+    //Keep concavity and convexity functions separate so user can call them if wanted
+    fn check_concavity(&self, concavity: f32, reference_width: &f32) -> bool {
+        let max_tolerance = 0.5;
+        let calculated_tolerance = 0.008 * reference_width;
+
+        if calculated_tolerance > max_tolerance {
+            if calculated_tolerance > concavity {
+                println!("Within maximum tolerance!");
+                true
+            } else {
+                println!("Failured convexity tolerance");
+                false
+            }
+        } else {
+            if max_tolerance > concavity {
+                println!("Within maximum tolerance!");
+                true
+            } else {
+                println!("Failured convexity tolerance");
+                false
+            }
+        }
+    }
+
+    fn check_convexity(&self, convexity: f32, reference_width: &f32) -> bool {
+        let max_tolerance = 0.5;
+        let calculated_tolerance = 0.008 * reference_width;
+
+        if calculated_tolerance > max_tolerance {
+            if calculated_tolerance > convexity {
+                println!("Within maximum tolerance!");
+                true
+            } else {
+                println!("Failured convexity tolerance");
+                false
+            }
+        } else {
+            if max_tolerance > convexity {
+                println!("Within maximum tolerance!");
+                true
+            } else {
+                println!("Failured convexity tolerance");
+                false
+            }
         }
     }
 }
@@ -200,6 +255,81 @@ mod shape_and_mass_test {
         assert_eq!(
             shs_product_1.check_external_dimensions(&reference_shs.width, &reference_shs.height),
             false
+        );
+    }
+
+    #[test]
+    fn passed_thickness_tolerance() {
+        let reference_shs = SHS::new(100.).length(8000.).gauge(5.).build();
+        let shs_product_1 = SHS::new(100.).length(8000.).gauge(5.04).build();
+
+        assert_eq!(shs_product_1.check_thickness(&reference_shs.gauge), true)
+    }
+    #[test]
+    fn failed_thickness_tolerance() {
+        let reference_shs = SHS::new(100.).length(8000.).gauge(5.).build();
+        let shs_product_1 = SHS::new(100.).length(8000.).gauge(4.8).build();
+
+        assert_eq!(shs_product_1.check_thickness(&reference_shs.gauge), false)
+    }
+
+    #[test]
+    fn pass_concavity() {
+        let reference_shs = SHS::new(100.).length(8000.).gauge(5.).build();
+        let shs_product_1 = SHS::new(100.4)
+            .height(99.8)
+            .length(8000.)
+            .gauge(4.8)
+            .build();
+
+        assert_eq!(
+            shs_product_1.check_concavity(0.5, &reference_shs.width),
+            true
+        );
+    }
+
+    #[test]
+    fn fail_concavity() {
+        let reference_shs = SHS::new(100.).length(8000.).gauge(5.).build();
+        let shs_product_1 = SHS::new(100.9)
+            .height(99.8)
+            .length(8000.)
+            .gauge(4.8)
+            .build();
+
+        assert_eq!(
+            shs_product_1.check_concavity(0.9, &reference_shs.width),
+            false
+        );
+    }
+
+    #[test]
+    fn pass_convexity() {
+        let reference_shs = SHS::new(100.).length(8000.).gauge(5.).build();
+        let shs_product_1 = SHS::new(100.4)
+            .height(99.8)
+            .length(8000.)
+            .gauge(4.8)
+            .build();
+
+        assert_eq!(
+            shs_product_1.check_convexity(0.2, &reference_shs.width),
+            true
+        );
+    }
+
+    #[test]
+    fn fail_convexity() {
+        let reference_shs = SHS::new(100.).length(8000.).gauge(5.).build();
+        let shs_product_1 = SHS::new(100.4)
+            .height(99.8)
+            .length(8000.)
+            .gauge(4.8)
+            .build();
+
+        assert_eq!(
+            shs_product_1.check_concavity(-0.5, &reference_shs.width),
+            true
         );
     }
 }
