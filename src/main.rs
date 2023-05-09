@@ -126,6 +126,16 @@ impl SHS {
         }
     }
 
+    fn check_concavity_or_convexity(&self, deviation: f32, reference_width: &f32) -> bool {
+        if deviation < 0. {
+            println!("Concavity");
+            self.check_concavity(deviation, reference_width)
+        } else {
+            println!("Convexity");
+            self.check_convexity(deviation, reference_width)
+        }
+    }
+
     //Future implementation
     //Combine check_concavity() and check_convexity() functions together since they are reciprocals of each other
     //I.e negative concavity is just positive convexity
@@ -329,6 +339,36 @@ mod shape_and_mass_test {
 
         assert_eq!(
             shs_product_1.check_concavity(-0.5, &reference_shs.width),
+            true
+        );
+    }
+
+    #[test]
+    fn test_concavity() {
+        let reference_shs = SHS::new(100.).length(8000.).gauge(5.).build();
+        let shs_product_1 = SHS::new(100.4)
+            .height(99.8)
+            .length(8000.)
+            .gauge(4.8)
+            .build();
+
+        assert_eq!(
+            shs_product_1.check_concavity_or_convexity(-0.5, &reference_shs.width),
+            true
+        );
+    }
+
+    #[test]
+    fn test_convexity() {
+        let reference_shs = SHS::new(100.).length(8000.).gauge(5.).build();
+        let shs_product_1 = SHS::new(100.4)
+            .height(99.8)
+            .length(8000.)
+            .gauge(4.8)
+            .build();
+
+        assert_eq!(
+            shs_product_1.check_concavity_or_convexity(0.5, &reference_shs.width),
             true
         );
     }
