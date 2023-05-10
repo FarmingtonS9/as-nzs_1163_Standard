@@ -126,20 +126,21 @@ impl SHS {
         }
     }
 
+    //TODO: Fix checks for concavity and convexity.
+    //Meant to be checking for percentage as well.
     fn check_concavity_or_convexity(&self, deviation: f32, reference_width: &f32) -> bool {
         if deviation < 0. {
             println!("Concavity");
             self.check_concavity(deviation, reference_width)
+
+        //0 will evaluate to "convexity"
+        //Rethink control logic, if we want to
         } else {
             println!("Convexity");
             self.check_convexity(deviation, reference_width)
         }
     }
 
-    //Future implementation
-    //Combine check_concavity() and check_convexity() functions together since they are reciprocals of each other
-    //I.e negative concavity is just positive convexity
-    //Keep concavity and convexity functions separate so user can call them if wanted
     fn check_concavity(&self, concavity: f32, reference_width: &f32) -> bool {
         let max_tolerance = 0.5;
         let calculated_tolerance = 0.008 * reference_width;
@@ -183,6 +184,14 @@ impl SHS {
                 println!("Failured convexity tolerance");
                 false
             }
+        }
+    }
+
+    fn check_squaredness_of_sides(&self, angle: f32) -> bool {
+        if angle < 89. || angle > 91. {
+            false
+        } else {
+            true
         }
     }
 }
@@ -371,5 +380,17 @@ mod shape_and_mass_test {
             shs_product_1.check_concavity_or_convexity(0.5, &reference_shs.width),
             true
         );
+    }
+
+    #[test]
+    fn fail_squaredness() {
+        let reference_shs = SHS::new(100.).length(8000.).gauge(5.).build();
+        assert_eq!(reference_shs.check_squaredness_of_sides(88.9), false)
+    }
+
+    #[test]
+    fn pass_squaredness() {
+        let reference_shs = SHS::new(100.).length(8000.).gauge(5.).build();
+        assert_eq!(reference_shs.check_squaredness_of_sides(90.1), true)
     }
 }
