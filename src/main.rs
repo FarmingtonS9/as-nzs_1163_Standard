@@ -232,9 +232,18 @@ impl SHS {
     }
 
     fn check_twist(&self, measured_twist: f32) -> bool {
-        let max_twist_tolerance = 2. + (0.5 * (self.width / 1000.));
+        let max_twist_tolerance = 2. + (0.5 * (self.length / 1000.));
 
         if measured_twist <= max_twist_tolerance {
+            true
+        } else {
+            false
+        }
+    }
+
+    fn check_straightness(&self, deviation: f32) -> bool {
+        let max_deviation = (self.length / 1000.) * 0.15;
+        if deviation <= max_deviation {
             true
         } else {
             false
@@ -450,5 +459,17 @@ mod shape_and_mass_test {
     fn fail_twist() {
         let reference_shs = SHS::new(100.).length(8000.).gauge(5.).build();
         assert_eq!(reference_shs.check_twist(6.5), false)
+    }
+
+    #[test]
+    fn pass_straightness() {
+        let reference_shs = SHS::new(100.).length(8000.).gauge(5.).build();
+        assert_eq!(reference_shs.check_straightness(0.7), true);
+    }
+
+    #[test]
+    fn fail_straightness() {
+        let reference_shs = SHS::new(100.).length(8000.).gauge(5.).build();
+        assert_eq!(reference_shs.check_straightness(1.3), false)
     }
 }
