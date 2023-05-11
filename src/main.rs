@@ -249,6 +249,15 @@ impl SHS {
             false
         }
     }
+
+    fn check_mass(&self, reference_weight: f32, measured_weight: f32) -> bool {
+        let weight_ratio = measured_weight / reference_weight;
+        if weight_ratio > 0.96 {
+            true
+        } else {
+            false
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -471,5 +480,17 @@ mod shape_and_mass_test {
     fn fail_straightness() {
         let reference_shs = SHS::new(100.).length(8000.).gauge(5.).build();
         assert_eq!(reference_shs.check_straightness(1.3), false)
+    }
+
+    #[test]
+    fn pass_weight() {
+        let reference_shs = SHS::new(100.).length(8000.).gauge(5.).build();
+        assert_eq!(reference_shs.check_mass(113.92, 112.5), true)
+    }
+
+    #[test]
+    fn fail_weight() {
+        let reference_shs = SHS::new(100.).length(8000.).gauge(5.).build();
+        assert_eq!(reference_shs.check_mass(113.92, 108.4), false)
     }
 }
