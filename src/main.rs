@@ -187,11 +187,57 @@ impl SHS {
         }
     }
 
+    ///Squaredness refers to how perpendicular the intersecting sides are.
+    /// 90 degrees is perfectly square, and the Standard dictates squaredness to be not greater than 1 or -1 of 90.
     fn check_squaredness_of_sides(&self, angle: f32) -> bool {
         if angle < 89. || angle > 91. {
             false
         } else {
             true
+        }
+    }
+
+    //Don't like this code block.
+    //Look to improve it
+    fn check_external_corner_profile(
+        &self,
+        radius_gauge: f32,
+        corner_1: f32,
+        corner_2: f32,
+    ) -> bool {
+        //Checking for external dimensions
+        //50x50 or less
+        if self.width <= 50. && self.height <= 50. {
+            if corner_1 >= 1.5 * self.gauge
+                && corner_1 <= 3.0 * self.gauge
+                && corner_2 >= 1.5 * self.gauge
+                && corner_2 <= 3.0 * self.gauge
+            {
+                true
+            } else {
+                false
+            }
+        //Greater than 50x50
+        } else {
+            if corner_1 >= 1.8 * self.gauge
+                && corner_1 <= 3.0 * self.gauge
+                && corner_2 >= 1.8 * self.gauge
+                && corner_2 <= 3.0 * self.gauge
+            {
+                true
+            } else {
+                false
+            }
+        }
+    }
+
+    fn check_twist(&self, measured_twist: f32) -> bool {
+        let max_twist_tolerance = 2. + (0.5 * (self.width / 1000.));
+
+        if measured_twist <= max_twist_tolerance {
+            true
+        } else {
+            false
         }
     }
 }
@@ -392,5 +438,17 @@ mod shape_and_mass_test {
     fn pass_squaredness() {
         let reference_shs = SHS::new(100.).length(8000.).gauge(5.).build();
         assert_eq!(reference_shs.check_squaredness_of_sides(90.1), true)
+    }
+
+    #[test]
+    fn pass_twist() {
+        let reference_shs = SHS::new(100.).length(8000.).gauge(5.).build();
+        assert_eq!(reference_shs.check_twist(0.9), true)
+    }
+
+    #[test]
+    fn fail_twist() {
+        let reference_shs = SHS::new(100.).length(8000.).gauge(5.).build();
+        assert_eq!(reference_shs.check_twist(6.5), false)
     }
 }
