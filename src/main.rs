@@ -17,7 +17,14 @@ struct SHS {
     height: f32,
     gauge: f32,
     length: f32,
-    //shs_reference: SHSRef
+    mass: f32,
+    wall_deviation: f32,
+    angle: f32,
+    radius_gauge: f32,
+    corner_1: f32,
+    corner_2: f32,
+    twist: f32,
+    straightness_deviation: f32,
 }
 
 impl SHS {
@@ -27,6 +34,14 @@ impl SHS {
             height: width,
             gauge: 0.,
             length: 0.,
+            mass: 0.,
+            wall_deviation: 0.,
+            angle: 0.,
+            radius_gauge: 0.,
+            corner_1: 0.,
+            corner_2: 0.,
+            twist: 0.,
+            straightness_deviation: 0.,
         }
     }
 
@@ -258,6 +273,29 @@ impl SHS {
             false
         }
     }
+
+    fn is_within_standard(
+        &self,
+        reference_steel: SHS,
+        deviation: f32,
+        angle: f32,
+        radius_gauge: f32,
+        corner_1: f32,
+        corner_2: f32,
+        measured_twist: f32,
+        deviation_from_straight: f32,
+        reference_weight: f32,
+        measured_weight: f32,
+    ) -> bool {
+        self.check_external_dimensions(&reference_steel.height, &reference_steel.width);
+        self.check_thickness(&reference_steel.gauge);
+        self.check_concavity_or_convexity(deviation, &reference_steel.width);
+        self.check_squaredness_of_sides(angle);
+        self.check_external_corner_profile(radius_gauge, corner_1, corner_2);
+        self.check_twist(measured_twist);
+        self.check_straightness(deviation_from_straight);
+        self.check_mass(reference_weight, measured_weight)
+    }
 }
 
 #[derive(Debug)]
@@ -266,6 +304,14 @@ struct SHSBuilder {
     height: f32,
     gauge: f32,
     length: f32,
+    mass: f32,
+    wall_deviation: f32,
+    angle: f32,
+    radius_gauge: f32,
+    corner_1: f32,
+    corner_2: f32,
+    twist: f32,
+    straightness_deviation: f32,
 }
 
 impl SHSBuilder {
@@ -283,12 +329,30 @@ impl SHSBuilder {
         self
     }
 
+    fn mass(&mut self, mass: f32) -> &mut Self {
+        self.mass = mass;
+        self
+    }
+
+    fn wall_deviation(&mut self, wall_deviation: f32) -> &mut Self {
+        self.wall_deviation = wall_deviation;
+        self
+    }
+
     fn build(&mut self) -> SHS {
         SHS {
             width: self.width,
             height: self.height,
             gauge: self.gauge,
             length: self.length,
+            mass: self.mass,
+            wall_deviation: self.wall_deviation,
+            angle: self.angle,
+            radius_gauge: self.radius_gauge,
+            corner_1: self.corner_1,
+            corner_2: self.corner_2,
+            twist: self.twist,
+            straightness_deviation: self.straightness_deviation,
         }
     }
 }
