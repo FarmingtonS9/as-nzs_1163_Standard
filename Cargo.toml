@@ -1,7 +1,13 @@
 [package]
 name = "as_nzs_1163_standard"
-version = "0.8.1"
+version = "0.8.2"
 edition = "2021"
+license = "MIT License"
+description = "Checks if steel tube or pipe is within the standard set by AS/NZS 1163."
+repository = "https://github.com/FarmingtonS9/as-nzs_1163_Standard"
+homepage = ""
+documentation = ""
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

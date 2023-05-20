@@ -143,16 +143,16 @@ impl SHS {
 
     //TODO: Fix checks for concavity and convexity.
     //Meant to be checking for percentage as well.
-    fn check_concavity_or_convexity(&self, deviation: f32, reference_width: &f32) -> bool {
-        if deviation < 0. {
+    fn check_concavity_or_convexity(&self, reference_width: &f32) -> bool {
+        if self.wall_deviation < 0. {
             println!("Concavity");
-            self.check_concavity(deviation, reference_width)
+            self.check_concavity(self.wall_deviation, reference_width)
 
         //0 will evaluate to "convexity"
         //Rethink control logic, if we want to
         } else {
             println!("Convexity");
-            self.check_convexity(deviation, reference_width)
+            self.check_convexity(self.wall_deviation, reference_width)
         }
     }
 
@@ -204,8 +204,8 @@ impl SHS {
 
     ///Squaredness refers to how perpendicular the intersecting sides are.
     /// 90 degrees is perfectly square, and the Standard dictates squaredness to be not greater than 1 or -1 of 90.
-    fn check_squaredness_of_sides(&self, angle: f32) -> bool {
-        if angle < 89. || angle > 91. {
+    fn check_squaredness_of_sides(&self) -> bool {
+        if self.angle < 89. || self.angle > 91. {
             false
         } else {
             true
@@ -214,19 +214,14 @@ impl SHS {
 
     //Don't like this code block.
     //Look to improve it
-    fn check_external_corner_profile(
-        &self,
-        radius_gauge: f32,
-        corner_1: f32,
-        corner_2: f32,
-    ) -> bool {
+    fn check_external_corner_profile(&self) -> bool {
         //Checking for external dimensions
         //50x50 or less
         if self.width <= 50. && self.height <= 50. {
-            if corner_1 >= 1.5 * self.gauge
-                && corner_1 <= 3.0 * self.gauge
-                && corner_2 >= 1.5 * self.gauge
-                && corner_2 <= 3.0 * self.gauge
+            if self.corner_1 >= 1.5 * self.gauge
+                && self.corner_1 <= 3.0 * self.gauge
+                && self.corner_2 >= 1.5 * self.gauge
+                && self.corner_2 <= 3.0 * self.gauge
             {
                 true
             } else {
@@ -234,10 +229,10 @@ impl SHS {
             }
         //Greater than 50x50
         } else {
-            if corner_1 >= 1.8 * self.gauge
-                && corner_1 <= 3.0 * self.gauge
-                && corner_2 >= 1.8 * self.gauge
-                && corner_2 <= 3.0 * self.gauge
+            if self.corner_1 >= 1.8 * self.gauge
+                && self.corner_1 <= 3.0 * self.gauge
+                && self.corner_2 >= 1.8 * self.gauge
+                && self.corner_2 <= 3.0 * self.gauge
             {
                 true
             } else {
@@ -246,27 +241,27 @@ impl SHS {
         }
     }
 
-    fn check_twist(&self, measured_twist: f32) -> bool {
+    fn check_twist(&self) -> bool {
         let max_twist_tolerance = 2. + (0.5 * (self.length / 1000.));
 
-        if measured_twist <= max_twist_tolerance {
+        if self.twist <= max_twist_tolerance {
             true
         } else {
             false
         }
     }
 
-    fn check_straightness(&self, deviation: f32) -> bool {
+    fn check_straightness(&self) -> bool {
         let max_deviation = (self.length / 1000.) * 0.15;
-        if deviation <= max_deviation {
+        if self.straightness_deviation <= max_deviation {
             true
         } else {
             false
         }
     }
 
-    fn check_mass(&self, reference_weight: f32, measured_weight: f32) -> bool {
-        let weight_ratio = measured_weight / reference_weight;
+    fn check_mass(&self, reference_weight: f32) -> bool {
+        let weight_ratio = self.mass / reference_weight;
         if weight_ratio > 0.96 {
             true
         } else {
@@ -274,27 +269,15 @@ impl SHS {
         }
     }
 
-    fn is_within_standard(
-        &self,
-        reference_steel: SHS,
-        deviation: f32,
-        angle: f32,
-        radius_gauge: f32,
-        corner_1: f32,
-        corner_2: f32,
-        measured_twist: f32,
-        deviation_from_straight: f32,
-        reference_weight: f32,
-        measured_weight: f32,
-    ) -> bool {
+    fn is_within_standard(&self, reference_steel: SHS, reference_weight: f32) {
         self.check_external_dimensions(&reference_steel.height, &reference_steel.width);
         self.check_thickness(&reference_steel.gauge);
-        self.check_concavity_or_convexity(deviation, &reference_steel.width);
-        self.check_squaredness_of_sides(angle);
-        self.check_external_corner_profile(radius_gauge, corner_1, corner_2);
-        self.check_twist(measured_twist);
-        self.check_straightness(deviation_from_straight);
-        self.check_mass(reference_weight, measured_weight)
+        self.check_concavity_or_convexity(&reference_steel.width);
+        self.check_squaredness_of_sides();
+        self.check_external_corner_profile();
+        self.check_twist();
+        self.check_straightness();
+        self.check_mass(reference_weight);
     }
 }
 
@@ -336,6 +319,33 @@ impl SHSBuilder {
 
     fn wall_deviation(&mut self, wall_deviation: f32) -> &mut Self {
         self.wall_deviation = wall_deviation;
+        self
+    }
+
+    fn angle(&mut self, angle: f32) -> &mut Self {
+        self.angle = angle;
+        self
+    }
+
+    fn external_corner_profile(
+        &mut self,
+        radius_gauge: f32,
+        corner_1: f32,
+        corner_2: f32,
+    ) -> &mut Self {
+        self.radius_gauge = radius_gauge;
+        self.corner_1 = corner_1;
+        self.corner_2 = corner_2;
+        self
+    }
+
+    fn twist(&mut self, twist: f32) -> &mut Self {
+        self.twist = twist;
+        self
+    }
+
+    fn straightness_deviation(&mut self, deviation: f32) -> &mut Self {
+        self.straightness_deviation = deviation;
         self
     }
 
@@ -487,10 +497,11 @@ mod shape_and_mass_test {
             .height(99.8)
             .length(8000.)
             .gauge(4.8)
+            .wall_deviation(-0.5)
             .build();
 
         assert_eq!(
-            shs_product_1.check_concavity_or_convexity(-0.5, &reference_shs.width),
+            shs_product_1.check_concavity_or_convexity(&reference_shs.width),
             true
         );
     }
@@ -502,24 +513,25 @@ mod shape_and_mass_test {
             .height(99.8)
             .length(8000.)
             .gauge(4.8)
+            .wall_deviation(0.5)
             .build();
 
         assert_eq!(
-            shs_product_1.check_concavity_or_convexity(0.5, &reference_shs.width),
+            shs_product_1.check_concavity_or_convexity(&reference_shs.width),
             true
         );
     }
 
     #[test]
     fn fail_squaredness() {
-        let reference_shs = SHS::new(100.).length(8000.).gauge(5.).build();
-        assert_eq!(reference_shs.check_squaredness_of_sides(88.9), false)
+        let reference_shs = SHS::new(100.).length(8000.).gauge(5.).angle(88.9).build();
+        assert_eq!(reference_shs.check_squaredness_of_sides(), false)
     }
 
     #[test]
     fn pass_squaredness() {
-        let reference_shs = SHS::new(100.).length(8000.).gauge(5.).build();
-        assert_eq!(reference_shs.check_squaredness_of_sides(90.1), true)
+        let reference_shs = SHS::new(100.).length(8000.).gauge(5.).angle(90.1).build();
+        assert_eq!(reference_shs.check_squaredness_of_sides(), true)
     }
 
     #[test]
